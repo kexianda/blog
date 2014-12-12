@@ -1,0 +1,49 @@
+menu:
+  首页: /
+  技术: /categories/技术/
+  随笔: /categories/随笔/
+  生活: /categories/生活/
+  归档: /archives
+  github: http://github.com/kexianda
+
+widgets:
+- search
+- category
+- tag
+- about_me
+
+excerpt_link: Read More
+
+twitter:
+  username:
+  show_replies: false
+  tweet_count: 5
+
+addthis:
+  enable: true
+  pubid: ra-545f079a33ba6a4d
+  sinaweibo: true
+  facebook: false 
+  twitter: true
+  google: true
+  pinterest: false
+
+fancybox: true
+
+google_analytics:
+rss:
+
+comment_provider: 
+# Facebook comment
+facebook:
+  appid: 123456789012345
+  comment_count: 5
+  comment_width: 840
+  comment_colorscheme: light
+
+# about me
+about_me: 
+  title: About me
+  gravatar: 
+  avatar: http://www.gravatar.com/avatar/b9b00e66c6b8a70f88c73cb6bdb06787?s=180
+  texts:  柯贤达 | kexianda(at)gmail | 码农 | 嗜辣椒、河鲜、摇滚、单车
