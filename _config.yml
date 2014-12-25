@@ -6,9 +6,9 @@
 title: 柯贤达
 subtitle: 人,诗意地栖居在大地上。
 description:
-author: 柯贤达
+author: 柯贤达 powered by hexo
 email:
-language:
+language: 
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
