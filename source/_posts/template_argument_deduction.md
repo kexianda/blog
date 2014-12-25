@@ -176,6 +176,8 @@ int main {
 
 ```
 
+更详细的各种情况的例子，可以看[这里](https://github.com/kexianda/test/blob/master/cpp11/forward.cpp)
+
 ### (Rule 5) 几个deduced A和tranformed A不一致的规则
 
 >(rule 5): In general, the deduction process attempts to find template argument values that will make the deduced A
