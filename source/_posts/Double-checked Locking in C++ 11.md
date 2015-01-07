@@ -1,4 +1,4 @@
-Double-checked Locking in C++ 11.md
+Double-checked Locking Singleton in C++ 11.md
 title: Double-checked Locking in C++ 11
 tags: C++ 
 category: 技术
@@ -41,7 +41,7 @@ private:
 	static mutex m_mutex;
 };
 
-//implementation.  Version 0.2。 it is ok, but too expensive
+//implementation.  Version 0.2  it is ok, but too expensive
 Singleton* Singleton::m_Instance = nullptr;
 
 Singleton* Singleton::getInstance () {
@@ -53,8 +53,7 @@ Singleton* Singleton::getInstance () {
 }
 
 ```
-这个版本有什么问题呢？成本太高，每个调用都去获取锁，并发情况下会导致其他线程因等待锁而被系统休眠。单例创建好之后，其实已经没有必要获取锁了。
-在获取锁之前再加一个if(m_Instance == nullptr)岂不是大绝招？
+这个版本有什么问题呢？成本太高，每个调用都去获取锁，并发情况下会导致其他线程因等待锁而被系统休眠。单例创建好之后，其实已经没有必要获取锁了。那么，在获取锁之前再加一个if(m_Instance == nullptr)判读，是否可以搞定？
 ```cpp
 //implementation.  Version 0.3
 Singleton* Singleton::m_Instance = nullptr;
@@ -69,11 +68,13 @@ Singleton* Singleton::getInstance () {
 	return Singleton;
 }
 ```
-这个版本有什么问题呢，来看 m_Instance = new Singleton; 这个new操作是先分配一块空间，然后执行构造函数：
+初看似乎很好，但问题很严重，来看看 m_Instance = new Singleton, 这个new操作是先分配一块空间，然后执行构造函数，相当于：
+
 pInstance = operator new(sizeof(Singleton)); // Step 1
 new (pInstance) Singleton; // Step 2
-如果一个线程执行到step 1时， 另一个线程发现m_Instance != nullptr, 直接把m_Instance返回，这个这个指针指向的空间并没有构造好。
-那么价格临时变量， 构造好之后，再赋给m_Instance,如下：
+
+如果一个线程执行到step 1时， 另一个线程发现 m_Instance != nullptr, 直接把 m_Instance 返回，而Step 2 还没来得及执行，返回的指针指向一块并没有构造好的空间...
+那么，来加一个临时变量，思路是让alloc和constructor都做完之后，再把指针赋给m_Instance，似乎很妙?
 ```cpp
 //implementation.  Version 0.4
 Singleton* Singleton::getInstance () {
@@ -81,60 +82,46 @@ Singleton* Singleton::getInstance () {
 	if (m_Instance == nullptr) {
 		lock_guard<mutex> lock(m_mutex);
 		if (m_Instance == nullptr) {
-			tmp = new Singleton; //step 1
-			m_Instance = tmp;  //step 2
+			tmp = new Singleton;  
+			m_Instance = tmp;  // 
 		}
 	}
 	return Singleton;
 }
 ```
-这个版本还是有两个问题。
-1. 编译器或CPU进行re-ordering后，并不能保证m_Instance = tmp时，构造函数已经执行完毕。所以需要memory barriers来保证m_Instance的赋值在构造完毕之后。保证了这个顺序，程序就工作了。
-2. 要保证Singleton::m_Instance的原子性。在不同平台x86/64, PowerPC, ARM等平台下，64位指针的赋值可能不是一个汇编指令。所以要保证m_Instance的原子性。
-
-### 用C++11的Acquire / Release Fences 
-```
-std::atomic<Singleton*> Singleton::m_Instance;
-std::mutex Singleton::m_mutex;
-
-Singleton* Singleton::getInstance() {
-    Singleton* tmp = m_Instance.load(memory_order_relaxed); //
-
-    atomic_thread_fence(memory_order_acquire);// acquire语意保持上面的代码re-order后不向下越过此行。 \_/
-    if (tmp == nullptr) {
-        lock_guard<mutex> lock(m_mutex);
-        tmp = m_Instance.load(memory_order_relaxed); //relaxed 
-        if (tmp == nullptr) {
-            tmp = new Singleton;
-            atomic_thread_fence(memory_order_release);// release语意保持下面的代码re-order后不向上越过此行。 /-\
-            										//关键之处。这里保证了构造完成之后才把tmp赋给m_Instance
-            m_Instance.store(tmp, memory_order_relaxed);
-        }
-    }
-    return tmp;
-}
+初看代码，符合直觉，似乎可以工作了。但，但是，编译器优化和CPU执行都有可能对代码执行顺序进行re-order(详细google搜索Memory Model). 
+```cpp
+//re-order之后，不能保证 step 2一定在step 3之前执行完毕。
+tmp = operator new(sizeof(Singleton)); // Step 1
+new (pInstance) Singleton; // Step 2
+m_Instance = tmp; //Step 3
 ```
 
 ### C++11 Sequentially Consistent Atomics
+
+要保证step 3在step 2之后执行，可以用Sequential ordering实现，编译器会插入memery barrier来保证。
+
 ```
 std::atomic<Singleton*> Singleton::m_Instance;
 std::mutex Singleton::m_mutex;
 
 Singleton* Singleton::getInstance () {
-    Singleton* tmp = m_Instance.load ();  //memory_order_seq_cst
+    Singleton* tmp = m_Instance.load ();  //memory_order_seq_cst //Sequential ordering
     if (tmp == nullptr) {
         std::lock_guard<std::mutex> lock(m_mutex);
         tmp = m_Instance.load(memory_order_relaxed);
         if (tmp == nullptr) {
             tmp = new Singleton;
-            m_Instance.store (tmp);
+            m_Instance.store (tmp);  //memory_order_seq_cst
         }
     }
     return tmp;
 }
 ```
 
-### 用C++11 Low-Level Ordering Constraints
+### Low-Level Ordering Constraints
+为了在各个平台上取得更好的性能，可以用low-level的acquire/release语义。
+
 ```
 std::atomic<Singleton*> Singleton::m_Instance;
 std::mutex Singleton::m_mutex;
@@ -152,3 +139,31 @@ Singleton* Singleton::getInstance () {
     return tmp;
 }
 ```
+
+### 用Template泛化
+
+
+```
+std::atomic<Singleton*> Singleton::m_Instance;
+std::mutex Singleton::m_mutex;
+
+Singleton* Singleton::getInstance () {
+    Singleton* tmp = m_Instance.load (memory_order_acquire);
+    if (tmp == nullptr) {
+        std::lock_guard<std::mutex> lock (m_mutex);
+        tmp = m_Instance.load (std::memory_order_relaxed);
+        if (tmp == nullptr) {
+            tmp = new Singleton;
+            m_Instance.store (tmp, memory_order_release);
+        }
+    }
+    return tmp;
+}
+```
+
+### 参考资料
+在看多线程的时候，会碰到一大堆概念，mutex, lock, atomic, memory model, memory barrier等。要更好的理解，可以先从CPU的Memory Barriers机制看起，然后看Jeff Preshing的blog, 他的帖子深入浅出，写非常好。再看看Herb Sutter,Hans Boehm等人的文章。
+1. [Memory Barriers: a Hardware View for Software Hackers](http://irl.cs.ucla.edu/~yingdi/web/paperreading/whymb.2010.06.07c.pdf)
+2. [C++ Memory Model - by Hans Boehm](http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf)
+3. [Jeff Preshing's blog](http://preshing.com/20130922/acquire-and-release-fences/)
+4. [Bartosz Milewski's Programming Cafe](http://bartoszmilewski.com/)
