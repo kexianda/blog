@@ -26,7 +26,7 @@ Singleton* Singleton::getInstance () {
 }
 
 ```
-在单线程环境，这个版本工作的很好。多线程线显然有data race了。
+在单线程环境，这个版本工作的很好。但在多线程线环境下有data race了。
 
 ### 多线程的尝试实现
 C++11已经支持多线程，无需调用库，用std::mutex加个锁:
@@ -89,7 +89,7 @@ Singleton* Singleton::getInstance () {
 	return Singleton;
 }
 ```
-初看代码，符合直觉，似乎可以工作了。但，但是，编译器优化和CPU执行都有可能对代码执行顺序进行re-order(详细google搜索Memory Model). 
+初看代码，符合直觉，似乎可以工作了。但，但是，编译器优化和CPU执行都有可能对代码执行顺序进行re-order.(参考[Memory Model](http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf)). 
 ```cpp
 //re-order之后，不能保证 step 2一定在step 3之前执行完毕。
 tmp = operator new(sizeof(Singleton)); // Step 1
