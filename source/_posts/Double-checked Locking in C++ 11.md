@@ -89,7 +89,7 @@ Singleton* Singleton::getInstance () {
 	return Singleton;
 }
 ```
-初看代码，符合直觉，似乎可以工作了。但，但是，编译器优化和CPU执行都有可能对代码执行顺序进行re-order.(参考[Memory Model](http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf)). 
+初看代码，符合直觉，似乎可以工作了。但是，编译器优化和CPU执行都有可能对代码执行顺序进行re-order.(参考[Memory Model](http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf)). 
 ```cpp
 //re-order之后，不能保证 step 2一定在step 3之前执行完毕。
 tmp = operator new(sizeof(Singleton)); // Step 1
@@ -118,9 +118,14 @@ Singleton* Singleton::getInstance () {
     return tmp;
 }
 ```
+```
+g++ -O2 -S -pthread -std=c++11  masm=intel Singleton.cpp -o asm
+```
+生成汇编代码(默认是AT&T风格汇编),可以看到编译器在x86平台上插入mfence指令。
 
 ### Low-Level Ordering Constraints
-为了在各个平台上取得更好的性能，可以用low-level的acquire/release语义。
+一般来说，用默认的memory_order_seq_cst已经够用了，代码也简单一些。不过mfence指令的成本较高，如果高并发调用频繁的话，可以考虑进一步优化。
+为了取得更好的性能，可以用low-level的acquire/release operation。
 
 ```
 std::atomic<Singleton*> Singleton::m_Instance;
@@ -139,7 +144,7 @@ Singleton* Singleton::getInstance () {
     return tmp;
 }
 ```
-
+再生成汇编代码，在x86/64平台上，可以看到，省了不必要的mfence指令。
 ### 用Template泛化
 
 
