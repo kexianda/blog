@@ -118,10 +118,19 @@ Singleton* Singleton::getInstance () {
     return tmp;
 }
 ```
-```
+```shell
 g++ -O2 -S -pthread -std=c++11  masm=intel Singleton.cpp -o asm
 ```
-生成汇编代码(默认是AT&T风格汇编),可以看到编译器在x86平台上插入mfence指令。
+```asm
+call	_Znwm   ; call new 
+.LEHE0:
+	mov	QWORD PTR _ZN9Singleton10m_instanceE[rip], rax  ;return value rax
+	test	rbp, rbp
+	mov	rbx, rax
+	mfence       ;memory fence!
+	je	.L11
+```
+生成汇编代码(默认是AT&T风格汇编),可以看到编译器在x86平台上wei store插入mfence指令。danshi, sihumeiyou wei load shengcheng memory fence(dui intel strongleixingmeiyou shenru yanjiu)
 
 ### Low-Level Ordering Constraints
 一般来说，用默认的memory_order_seq_cst已经够用了，代码也简单一些。不过mfence指令的成本较高，如果高并发调用频繁的话，可以考虑进一步优化。
@@ -144,25 +153,47 @@ Singleton* Singleton::getInstance () {
     return tmp;
 }
 ```
-再生成汇编代码，在x86/64平台上，可以看到，省了不必要的mfence指令。
+再生成汇编代码，在x86/64平台上，可以看到，shaolegemfence指令。
 ### 用Template泛化
 
-
 ```
-std::atomic<Singleton*> Singleton::m_Instance;
-std::mutex Singleton::m_mutex;
+#include <mutex>
+#include <atomic>
 
-Singleton* Singleton::getInstance () {
-    Singleton* tmp = m_Instance.load (memory_order_acquire);
-    if (tmp == nullptr) {
-        std::lock_guard<std::mutex> lock (m_mutex);
-        tmp = m_Instance.load (std::memory_order_relaxed);
-        if (tmp == nullptr) {
-            tmp = new Singleton;
-            m_Instance.store (tmp, memory_order_release);
-        }
-    }
-    return tmp;
+using namespace std;
+
+template<typename T> class Singleton {
+private:
+	static atomic<T*> m_instance;
+	static mutex	m_mutex;
+public:
+	static T* getInstance () ;
+};
+
+template<typename T> atomic<T*> Singleton<T>::m_instance;
+template<typename T>mutex	Singleton<T>::m_mutex;
+
+template<typename T> T* Singleton<T>::getInstance () {
+		T* tmp = m_instance.load(memory_order_acquire);
+		//atomic_thread_fence (memory_order_acquire);  //
+		if (tmp == nullptr)	{
+			lock_guard<mutex> lock(m_mutex);
+			if (tmp == nullptr) {
+				tmp = new T;
+				//atomic_thread_fence  (memory_order_release);  //
+
+				m_instance.store (tmp, memory_order_release);
+			}
+		}
+		return tmp;
+}
+
+class Foo {};
+
+int main()
+{
+	Foo* inst = Singleton<Foo>::getInstance ();
+	return 0;
 }
 ```
 
@@ -172,3 +203,4 @@ Singleton* Singleton::getInstance () {
 2. [C++ Memory Model - by Hans Boehm](http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf)
 3. [Jeff Preshing's blog](http://preshing.com/20130922/acquire-and-release-fences/)
 4. [Bartosz Milewski's Programming Cafe](http://bartoszmilewski.com/)
+
