@@ -5,10 +5,12 @@ tags:
 category: 技术
 date: 2014/12/28
 ---
-
+学习C++ 11的多线程和memory model，研究一下double-checked locking是一个好例子。
+Scott Meyers和Andrei Alexandrescu两位牛写过一篇[paper](http://www.aristeia.com/Papers/DDJ_Jul_Aug_2004_revised.pdf)
+[](http://preshing.com/20130930/double-checked-locking-is-fixed-in-cpp11/)
 <!-- more -->
-###单线程
-如何用C++实现一个Singleton呢, 不假思索，第一个版本出来
+###1. 单线程
+如何用C++实现一个Singleton呢, 很简单：
 ```cpp
 //header file
 class Singleton {
@@ -31,7 +33,7 @@ Singleton* Singleton::getInstance () {
 ```
 在单线程环境，这个版本工作的很好。但在多线程线环境下有data race了。
 
-### 多线程的尝试实现
+###2.多线程的尝试实现
 C++11已经支持多线程，无需调用库，用std::mutex加个锁:
 
 ```cpp
@@ -100,7 +102,7 @@ new (pInstance) Singleton; // Step 2
 m_Instance = tmp; //Step 3
 ```
 
-### C++11 Sequentially Consistent Atomics
+###3.C++11 Sequentially Consistent Atomics
 
 要保证step 3在step 2之后执行，可以用Sequential ordering实现，编译器会插入memery barrier来保证。
 
