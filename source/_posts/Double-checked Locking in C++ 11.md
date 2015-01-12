@@ -1,9 +1,12 @@
-Double-checked Locking Singleton in C++ 11.md
 title: Double-checked Locking in C++ 11
-tags: C++ 
+tags: 
+	- C++ 
+	- 多线程
 category: 技术
 date: 2014/12/28
 ---
+
+<!-- more -->
 ###单线程
 如何用C++实现一个Singleton呢, 不假思索，第一个版本出来
 ```cpp
