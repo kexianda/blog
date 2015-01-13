@@ -1,16 +1,20 @@
-title: Double-checked Locking in C++ 11
-tags: 
-	- C++ 
+title: Double-checked Locking
+tags:
+	- C++
 	- 多线程
 category: 技术
 date: 2014/12/28
 ---
-学习C++ 11的多线程和memory model，研究一下double-checked locking是一个好例子。
-Scott Meyers和Andrei Alexandrescu两位牛写过一篇[paper](http://www.aristeia.com/Papers/DDJ_Jul_Aug_2004_revised.pdf)
-[](http://preshing.com/20130930/double-checked-locking-is-fixed-in-cpp11/)
+
+在学习C++11多线程的时候，会碰到一大堆概念，mutex, lock, atomic, memory model, memory barrier， lock-free等。要更好的理解，可以先从CPU的Memory Barriers机制([Memory Barriers: a Hardware View for Software Hackers][1])看起，然后看Jeff Preshing的blog, 他的帖子深入浅出，写得非常好。再看看Herb Sutter,Hans Boehm等人的文章。 [Bartosz Milewski的博客][7]也值得看看.
+
+double-checked locking是一个可以用来学习的很好例子。 Scott Meyers和Andrei Alexandrescu两位牛写过一篇[paper][2]，讨论了double-checked实现的困难(Java的memeory model没有完善之前有同样的问题). Jeff Preshing写篇[文章][3]讨论这个问题.
+
+这里做点个人笔记, 实现一个Singleton，最后用template泛化.
+
 <!-- more -->
 ###1. 单线程
-如何用C++实现一个Singleton呢, 很简单：
+Singleton的单线程实现很简单：
 ```cpp
 //header file
 class Singleton {
@@ -87,14 +91,14 @@ Singleton* Singleton::getInstance () {
 	if (m_Instance == nullptr) {
 		lock_guard<mutex> lock(m_mutex);
 		if (m_Instance == nullptr) {
-			tmp = new Singleton;  
-			m_Instance = tmp;  // 
+			tmp = new Singleton;
+			m_Instance = tmp;  //
 		}
 	}
 	return Singleton;
 }
 ```
-初看代码，符合直觉，似乎可以工作了。但是，编译器优化和CPU执行都有可能对代码执行顺序进行re-order.(参考[Memory Model](http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf)). 
+初看代码，符合直觉，似乎可以工作了。但是，编译器优化和CPU执行都有可能对代码执行顺序进行re-order.(可参考[Memory Model][4])
 ```cpp
 //re-order之后，不能保证 step 2一定在step 3之前执行完毕。
 tmp = operator new(sizeof(Singleton)); // Step 1
@@ -104,7 +108,7 @@ m_Instance = tmp; //Step 3
 
 ###3.C++11 Sequentially Consistent Atomics
 
-要保证step 3在step 2之后执行，可以用Sequential ordering实现，编译器会插入memery barrier来保证。
+要保证step 3在step 2之后执行，可以用Sequential ordering实现(即使用默认的memory_order_seq_cst)，编译器会插入memery barrier来保证。
 
 ```
 std::atomic<Singleton*> Singleton::m_Instance;
@@ -123,11 +127,12 @@ Singleton* Singleton::getInstance () {
     return tmp;
 }
 ```
+用gcc生成汇编代码(默认是AT&T风格汇编, 我习惯看intel风格的，加个masm=intel参数):
 ```shell
-g++ -O2 -S -pthread -std=c++11  masm=intel Singleton.cpp -o asm
+g++ -O2 -S -pthread -std=c++11  masm=intel Singleton.cpp -o asm.s
 ```
 ```asm
-call	_Znwm   ; call new 
+call	_Znwm   ; call new
 .LEHE0:
 	mov	QWORD PTR _ZN9Singleton10m_instanceE[rip], rax  ;return value rax
 	test	rbp, rbp
@@ -135,11 +140,11 @@ call	_Znwm   ; call new
 	mfence       ;memory fence!
 	je	.L11
 ```
-生成汇编代码(默认是AT&T风格汇编),可以看到编译器在x86平台上wei store插入mfence指令。danshi, sihumeiyou wei load shengcheng memory fence(dui intel strongleixingmeiyou shenru yanjiu)
+可以看到编译器在x86平台上为store()生成了mfence指令。 那load()为什么没有memory fence呢，是因为x86/64是"Strong"类型的CPU(细节可参考[weak vs strong memory models][5]和[Memory Barriers][1]).
 
-### Low-Level Ordering Constraints
+###4. Low-Level Ordering Constraints
 一般来说，用默认的memory_order_seq_cst已经够用了，代码也简单一些。不过mfence指令的成本较高，如果高并发调用频繁的话，可以考虑进一步优化。
-为了取得更好的性能，可以用low-level的acquire/release operation。
+为了取得更好的性能，可以用low-level的acquire/release operation. 有点晦涩，可以参考[acquire and release fences][6]和[acquire and release semantics][8]
 
 ```
 std::atomic<Singleton*> Singleton::m_Instance;
@@ -158,8 +163,10 @@ Singleton* Singleton::getInstance () {
     return tmp;
 }
 ```
-再生成汇编代码，在x86/64平台上，可以看到，shaolegemfence指令。
-### 用Template泛化
+再生成汇编代码，在x86/64平台上，可以看到，memory_order_release没有生成mfence指令。
+那，为什么还要memory_order_relaxed、memory_order_release呢？ 因为它们是语言层次上的抽象，可以阻止编译器的指令re-order，同时保证了不同CPU平台的可移植性。
+
+###5. 用Template泛化
 
 ```
 #include <mutex>
@@ -176,17 +183,16 @@ public:
 };
 
 template<typename T> atomic<T*> Singleton<T>::m_instance;
-template<typename T>mutex	Singleton<T>::m_mutex;
+template<typename T> mutex	Singleton<T>::m_mutex;
 
 template<typename T> T* Singleton<T>::getInstance () {
 		T* tmp = m_instance.load(memory_order_acquire);
-		//atomic_thread_fence (memory_order_acquire);  //
+		//atomic_thread_fence (memory_order_acquire);
 		if (tmp == nullptr)	{
 			lock_guard<mutex> lock(m_mutex);
 			if (tmp == nullptr) {
 				tmp = new T;
-				//atomic_thread_fence  (memory_order_release);  //
-
+				//atomic_thread_fence  (memory_order_release);
 				m_instance.store (tmp, memory_order_release);
 			}
 		}
@@ -202,10 +208,13 @@ int main()
 }
 ```
 
-### 参考资料
-在看多线程的时候，会碰到一大堆概念，mutex, lock, atomic, memory model, memory barrier等。要更好的理解，可以先从CPU的Memory Barriers机制看起，然后看Jeff Preshing的blog, 他的帖子深入浅出，写非常好。再看看Herb Sutter,Hans Boehm等人的文章。
-1. [Memory Barriers: a Hardware View for Software Hackers](http://irl.cs.ucla.edu/~yingdi/web/paperreading/whymb.2010.06.07c.pdf)
-2. [C++ Memory Model - by Hans Boehm](http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf)
-3. [Jeff Preshing's blog](http://preshing.com/20130922/acquire-and-release-fences/)
-4. [Bartosz Milewski's Programming Cafe](http://bartoszmilewski.com/)
+
+[1]: http://irl.cs.ucla.edu/~yingdi/web/paperreading/whymb.2010.06.07c.pdf
+[2]: http://www.aristeia.com/Papers/DDJ_Jul_Aug_2004_revised.pdf
+[3]: http://preshing.com/20130930/double-checked-locking-is-fixed-in-cpp11
+[4]: http://rsim.cs.illinois.edu/Pubs/08PLDI.pdf
+[5]: http://preshing.com/20120930/weak-vs-strong-memory-models
+[6]: http://preshing.com/20130922/acquire-and-release-fences
+[7]: http://bartoszmilewski.com
+[8]: http://preshing.com/20120913/acquire-and-release-semantics/
 
