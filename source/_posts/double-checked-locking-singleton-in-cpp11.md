@@ -8,7 +8,7 @@ date: 2014/12/28
 
 在学习C++11多线程的时候，会碰到一大堆概念，mutex, lock, atomic, memory model, memory barrier， lock-free等。要更好的理解，可以先了解下CPU的Memory Barriers机制(可读Paul McKenny的[Memory Barriers: a Hardware View for Software Hackers][1])，然后看Jeff Preshing的blog, 他的帖子深入浅出，写得非常好。再看看Herb Sutter,Hans Boehm等人的文章。 [Bartosz Milewski的博客][7]也值得看看.
 
-double-checked locking是一个可以用来学习的好例子。 Scott Meyers和Andrei Alexandrescu两位大牛写过一篇[paper][2]，讨论了double-checked实现的困难(Java的memeory model没有完善之前有同样的问题). Jeff Preshing写篇[文章][3]讨论这个问题.
+double-checked locking是一个用来学习的好例子。 Scott Meyers和Andrei Alexandrescu两位大牛写过一篇[paper][2]，讨论了double-checked实现的困难(Java的memeory model没有完善之前有同样的问题). Jeff Preshing写篇[文章][3]讨论这个问题.
 
 看完大牛们的文章, 一步一步来动手实现一个Singleton，最后用template泛化.
 
@@ -92,6 +92,7 @@ Singleton* Singleton::getInstance () {
 	Singleton * tmp = m_Instance;
 	if (m_Instance == nullptr) {
 		lock_guard<mutex> lock(m_mutex);
+		tmp = m_Instance;
 		if (m_Instance == nullptr) {
 			tmp = new Singleton;   //oops
 			m_Instance = tmp;  
@@ -134,7 +135,7 @@ Singleton* Singleton::getInstance () {
         std::lock_guard<std::mutex> lock(m_mutex);
 
         //maybe many threads are locked here by the mutex at the same time.
-        //After the lock is free(the singleton is created by one thread), just load again
+        //After the lock is free(the singleton is created by one thread), load again
         tmp = m_Instance.load(memory_order_relaxed);
         if (tmp == nullptr) {
             tmp = new Singleton;
@@ -147,15 +148,15 @@ Singleton* Singleton::getInstance () {
 那么，我们来看看， atomic的load和store是怎样保证re-order之后语义还是正确的呢？
 用gcc生成汇编代码(默认是AT&T风格汇编, 我习惯看intel风格的，加个masm=intel参数):
 ```shell
-#ubuntu, gcc 4.8
-g++ -O2 -S -pthread -std=c++11  masm=intel Singleton.cpp -o asm.s
+# intel i5, ubuntu14.04, gcc 4.8.2
+g++ -O2 -S -masm=intel -pthread -std=c++11  Singleton.cpp -o asm.s
 ```
 ```asm
 call	_Znwm   ; call new
 .LEHE0:
-	mov	QWORD PTR _ZN9Singleton10m_instanceE[rip], rax  ;return value rax
-	test	rbp, rbp
-	mov	rbx, rax
+	mov	QWORD PTR _ZN9Singleton10m_instanceE[rip], rax  ;return value into rax
+	test	rbp, rbp ; 
+	mov	rbx, rax   ; rbx is the var tmp
 	mfence       ;memory fence!
 	je	.L11
 ```
@@ -182,7 +183,7 @@ Singleton* Singleton::getInstance () {
 }
 ```
 再生成汇编代码，在x86/64平台上，可以看到，memory_order_release没有生成mfence指令。
-那，为什么还要memory_order_relaxed、memory_order_release呢？ 因为它们是语言层次上的抽象，可以阻止编译器的指令re-order，同时保证了不同CPU平台的可移植性。
+那，为什么还要memory_order_relaxed、memory_order_release呢？ 因为它们是语言层次上的抽象，可以阻止编译器的指令re-order. 同时保证了不同CPU平台的可移植性,在ARM， PowerPC等平台会生成对应的指令。
 
 ###5. 用Template泛化
 
