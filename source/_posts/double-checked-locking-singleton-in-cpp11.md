@@ -136,7 +136,7 @@ Singleton* Singleton::getInstance () {
 
         //maybe many threads are locked here by the mutex at the same time.
         //After the lock is free(the singleton is created by one thread), load again
-        tmp = m_Instance.load(memory_order_relaxed);
+        tmp = m_Instance.load(std::memory_order_relaxed);
         if (tmp == nullptr) {
             tmp = new Singleton;
             m_Instance.store (tmp);  //memory_order_seq_cst
@@ -170,13 +170,13 @@ std::atomic<Singleton*> Singleton::m_Instance;
 std::mutex Singleton::m_mutex;
 
 Singleton* Singleton::getInstance () {
-    Singleton* tmp = m_Instance.load (memory_order_acquire);
+    Singleton* tmp = m_Instance.load (std::memory_order_acquire);
     if (tmp == nullptr) {
         std::lock_guard<std::mutex> lock (m_mutex);
         tmp = m_Instance.load (std::memory_order_relaxed);
         if (tmp == nullptr) {
             tmp = new Singleton;
-            m_Instance.store (tmp, memory_order_release);
+            m_Instance.store (tmp, std::memory_order_release);
         }
     }
     return tmp;
@@ -205,14 +205,14 @@ template<typename T> atomic<T*> Singleton<T>::m_instance;
 template<typename T> mutex	Singleton<T>::m_mutex;
 
 template<typename T> T* Singleton<T>::getInstance () {
-		T* tmp = m_instance.load(memory_order_acquire);
-		//atomic_thread_fence (memory_order_acquire);
+		T* tmp = m_instance.load(std::memory_order_acquire);
+		//atomic_thread_fence (std::memory_order_acquire);
 		if (tmp == nullptr)	{
 			lock_guard<mutex> lock(m_mutex);
 			if (tmp == nullptr) {
 				tmp = new T;
-				//atomic_thread_fence  (memory_order_release);
-				m_instance.store (tmp, memory_order_release);
+				//atomic_thread_fence  (std::memory_order_release);
+				m_instance.store (tmp, std::memory_order_release);
 			}
 		}
 		return tmp;
