@@ -25,7 +25,7 @@ double-checked locking是一个用来学习多线程的好例子。 Scott Meyers
 
 <!-- more -->
 
-###1. 单线程
+### 1. 单线程实现  
 Singleton的单线程实现很简单：
 
 ```cpp
@@ -51,7 +51,7 @@ Singleton* Singleton::getInstance () {
 在单线程环境，这个版本工作的很好。 但在多线程线环境下有data race了， 关键在那个if判断， 多个线程可能同时进入if里面。
 
 
-###2.多线程的尝试实现
+### 2. 多线程的尝试实现  
 C++11已经支持多线程，无需调用库，用std::mutex加个锁， 把if判断放到临界区里保护起来:
 
 ```cpp
@@ -95,8 +95,10 @@ Singleton* Singleton::getInstance () {
 
 ```
 想法很好，但是有严重的缺陷，来看看 m_Instance = new Singleton, 这个new操作是先分配一块空间，然后执行构造函数，相当于：
-pInstance = operator new(sizeof(Singleton)); // Step 1
-new (pInstance) Singleton; // Step 2
+```
+  pInstance = operator new(sizeof(Singleton)); // Step 1  
+  new (pInstance) Singleton; // Step 2  
+```
 如果一个线程执行到step 1时， 另一个线程发现 m_Instance != nullptr, 直接把 m_Instance 返回，而Step 2 还没来得及执行，返回的指针指向一块并没有构造好的空间...
 那么，来加一个临时变量，思路是让allocator和constructor都做完之后，再把指针赋给m_Instance，这样可行么？
 ```cpp
@@ -123,7 +125,7 @@ new (pInstance) Singleton; // Step 2
 m_Instance = tmp; //Step 3
 
 ```
-###3.C++11 Sequentially Consistent Atomics
+### 3. C++11 Sequentially Consistent Atomics  
 要保证step 3在step 2之后执行，可以用Sequential ordering实现(即使用默认的memory_order_seq_cst)，编译器会插入memery barrier来保证。
 ```cpp
 #include <mutex>
@@ -171,14 +173,14 @@ g++ -O2 -S -masm=intel -pthread -std=c++11  Singleton.cpp -o asm.s
 call	_Znwm   ; call new
 .LEHE0:
 	mov	QWORD PTR _ZN9Singleton10m_instanceE[rip], rax  ;return value into rax
-	test	rbp, rbp ; 
+	test	rbp, rbp ;
 	mov	rbx, rax   ; rbx is the var tmp
 	mfence       ;memory fence!
 	je	.L11
 ```
 可以看到编译器在x86平台上为store()生成了mfence指令。 那load()为什么没有memory fence呢，是因为x86/64是"Strong"类型的CPU(细节可参考[weak vs strong memory models][5]和Paul McKenny的文章[Memory Barriers][1]).
 
-###4. Low-Level Ordering Constraints
+### 4. 用Low-Level Ordering Constraints实现    
 一般来说，用默认的memory_order_seq_cst已经够用了，代码也简单一些。不过mfence指令的成本较高(几十倍于register to register指令，因为需要在CPU各个core和cache里进行复杂的通讯，同步cache line等等)，如果是在高并发情景下，可以考虑进一步优化。可以用low-level的acquire/release operation. 有点晦涩，可以参考[acquire and release fences][6]和[acquire and release semantics][8]
 
 ```cpp
@@ -199,11 +201,18 @@ Singleton* Singleton::getInstance () {
 }
 
 ```
-再生成汇编代码，在x86/64平台上，可以看到，memory_order_release没有生成mfence指令。
-那，为什么还要memory_order_relaxed、memory_order_release呢？ 因为它们是语言层次上的抽象，可以阻止编译器的指令re-order. 同时保证了不同CPU平台的可移植性,在ARM， PowerPC等平台会生成对应的指令。
+再生成汇编代码，在x86/64平台上，可以看到，memory_order_release没有生成mfence指令. 为什么呢?
+* acquire语义 = LoadLoad + LoadStore
+* release语义 = LoadStore + StoreStore
 
-###5. 用Template泛化
+```
+| LoadLoad  | LoadStore  |
+| StoreLoad | StoreStore |
+```
+而x86 CPU不需要barrier就能保证 LoadLoad, LoadStore, StoreStore, 所以, x86平台上acquire/release都不需要内存屏障指令. 这就是为什么编译后没有了mfence指令.
+那，为什么代码里还要memory_order_relaxed、memory_order_release呢？ 因为它们是语言层次上的抽象，可以阻止编译器的指令re-order. 同时保证了不同CPU平台的可移植性,在ARM， PowerPC等平台会生成对应的指令。
 
+### 5. 用Template泛化  
 ```cpp
 #include <mutex>
 #include <atomic>
@@ -243,6 +252,8 @@ int main()
 }
 ```
 
+收工.
+
 [1]: http://irl.cs.ucla.edu/~yingdi/web/paperreading/whymb.2010.06.07c.pdf
 [2]: http://www.aristeia.com/Papers/DDJ_Jul_Aug_2004_revised.pdf
 [3]: http://preshing.com/20130930/double-checked-locking-is-fixed-in-cpp11
@@ -251,4 +262,3 @@ int main()
 [6]: http://preshing.com/20130922/acquire-and-release-fences
 [7]: http://bartoszmilewski.com
 [8]: http://preshing.com/20120913/acquire-and-release-semantics/
-
