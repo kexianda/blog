@@ -9,8 +9,7 @@ category: 技术
 ---
 
 WannaCry这阵子让很多人欲哭无泪， 感染蠕虫后， 网上各种分析和破解办法，然而没有能彻底解决问题的方法. 因为WannaCry的RSA+AES加密套餐，文件被AES算法加密, 而AES的key用RSA算法加密了. 理论上, 目前很难破解.  
-由此，简单看下密码学原语(cryptographic primitives).  
-简单评估下JDK里加密算法的性能，如果自己需要加密，怎么选择合适的加密算法?  
+由此，扯扯密码学原语(cryptographic primitives). 简单评估下JDK里加密算法的性能，还有怎么选择合适的加密算法?  
 再探究一下AES算法的硬件加速和优化的工程实现。  
 <!--more-->
 
@@ -158,9 +157,9 @@ JDK9的实现还是不足够好，我本来想优化这个到HotSpot里去的，
 
 ## 5. 小广告
 ### 5.1 Apache Commons Crypto
-因为JDK 7/8 的Crypto不给力，搬Java砖的同志可以考虑用Apache Commons Crypto，工作所在team贡献的项目，又快又好，谁用谁知道:-)
+因为JDK 7/8 的Crypto不给力，搬Java砖的同志需要加密时, 如果性能需考量, 可以考虑用Apache Commons Crypto，工作所在team贡献的项目，又快又好，谁用谁知道:-)
+我同事在apacheCon上有个[演讲](https://www.youtube.com/watch?v=Vwp8oHnut3k)
 
 ### 5.2 JDK9的改进
-HotSpot上AES的实现有改进的地方，我提了两patch([JDK-8143925](https://bugs.openjdk.java.net/browse/JDK-8143925)和[JDK-8152354](https://bugs.openjdk.java.net/browse/JDK-JDK-8152354))到HotSpot(Java 9)，由公司的JVM team同事提交进去了.
-一是加了个HotSpot Intrinsic, AES-CTR算法有5~8x的性能提升.  二是代码上微调，对CPU更友好，AES-CBC得到15%~50%的提升.
-Java 9今年7月应该可以GA了. Java 9的Crypto库性能已经接近OpenSSL了.
+还好Java 9上AES的实现有改进. Java 9过几个与就要GA了. 我不是专业做JVM开发的, 工作需要, 提了两patch([JDK-8143925](https://bugs.openjdk.java.net/browse/JDK-8143925)和[JDK-8152354](https://bugs.openjdk.java.net/browse/JDK-8152354))到HotSpot，由公司的JVM team同事提交进去了.
+一个是AES-CTR算法有5~8x的性能提升.  二是AES-CBC算法得到15%~50%的提升, 性能已经接近OpenSSL了. 代码能为上亿台机器省一点点电能, 也是很爽的事情.

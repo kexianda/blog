@@ -5,14 +5,13 @@ tags:
  - HotSpot
 category: 技术
 ---
-一般不想写环境配置类文章, 但调试HotSpot的环境配置的资料确实比较少. 我不是工作在JVM上专家, 只是玩票性质提交过patch, 或者有时候好奇Java的实现, 需要深入一下JVM看看具体的实现.
-有人写过Mac上配置, Windows的环境没查到,我也没弄过, 宇宙第一IDE的Visual Studio应该很好使.
-这里记录整理一下Ubuntu上开发环境配置.
+调试HotSpot的环境配置的资料确实比较少. 想提交patch或者有时候好奇需要深入一下JVM看看具体的实现, 需要配置下开发环境. 这里记录整理一下.
+有人写过Mac上配置, Windows的环境没查到,我也没弄过, 估计宇宙第一IDE的Visual Studio应该很好使:-)
 <!--more-->
 
 ## 0. prerequisites
 #### mercurial
-环境是Ubuntu 1604. 首先安装OpenJDK用的SCM工具mercurial
+OS环境我选Ubuntu 1604. 首先安装OpenJDK用的SCM工具mercurial
 ```shell
 sudo apt-get install mercurial
 

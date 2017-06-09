@@ -7,8 +7,8 @@ tags:
 category: 技术
 ---
 
-近期有人和我讨论java volatile, 人老脑子懵，我还volatile不是atomic的云云，神经还搭在C++ 的volatile坑里没恢复过来, 过来一阵才反应过来. 就此契机,整理一下. 
-几年前曾给同事做过一个java内存模型的knowledge sharing, 摘取部分内容放这, 简单的回顾下内存模型, 然后从JVM hotSpot实现的角度来仔细看看volatile的语义.
+近期有人和我讨论java volatile, 人老脑子懵，我还volatile不是atomic的云云，神经还搭在C++ 的volatile坑里没恢复过来, 过来一阵才反应过来, 这是Java的volatile.
+几年前曾给同事做过一个java内存模型的knowledge sharing, 摘取部分内容放这, 简单的回顾下内存模型, 然后从JVM hotSpot实现的角度来仔细看看volatile的语义. 就此契机,整理出来.
 <!-- more -->
 
 ### 1. reorder和memory barrier
@@ -17,9 +17,9 @@ cpu硬件优化的out-of-order机制会导致指令的reorder. 另外，CPU的�
 
 为了避免reorder，保证逻辑正确性，我们需要memory barrier.
 有读(Load)有写(Store), 组合成四种基本的reorder类型(memory barrier类型)
-* LoadLoad 
+* LoadLoad
 * LoadStore
-* StoreLoad 
+* StoreLoad
 * StoreStore
 
 还会看到acquire/release，为啥弄出这两概念呢，不妨从应用场景来理解.
@@ -28,7 +28,7 @@ cpu硬件优化的out-of-order机制会导致指令的reorder. 另外，CPU的�
 EnterCriticalSection
    acquire  semantics
  /--------------------------------------------\
-/       do critical job                        \ 
+/       do critical job                        \
   all memory operations stay below the line
 
   all memory operations stay above the line
@@ -52,13 +52,13 @@ thread1:
                      print (result)
 ```
 可以看到,
-* acquire == LoadLoad  | LoadStore 
+* acquire == LoadLoad  | LoadStore
 * release == StoreStore| LoadStore
 这样，acquire/release概念就不晦涩了. btw, C++ 11里支持low-level的acquire/release语义.
 
 ### 2. x86/64 CPU的Memory Model
 从Intel手册里能看到:
-* Reads are not reordered with other reads. 
+* Reads are not reordered with other reads.
 不需要特殊fence指令就能保证LoadLoad
 * 2.Writes are not reordered with older reads.  
 不需要特殊fence指令就能保证LoadStore
@@ -102,10 +102,10 @@ inline void OrderAccess::fence() {
 // hotspot/src/cpu/x86/vm/templateTable_x86.cpp
 
 void TemplateTable::putfield_or_static() {
- 
+
    // field addresses
    const Address field(obj, off, Address::times_1, 0*wordSize);
-   
+
    // 省略其他代码...
 
   // [jk] not needed currently on X86_64
@@ -122,7 +122,7 @@ void TemplateTable::putfield_or_static() {
     // [Xianda]: 把值从到浮点运算单元寄存器写到field的地址. 指令保证原子性
     // [Xianda]: fistp_d on x86, movsd on x64
     __ fistp_d(field);            // and put into memory atomically
-    
+
     __ addptr(rsp, 2*wordSize);
 
     // [Xianda]: 加入memory-barrier保证语义，
@@ -158,13 +158,13 @@ class VolatileTest {
 ```shell
 // 需要下载工具hsdis-amd64.so, 放到${LD_LIBRARY_PATH}里
 // -XX:CompileCommand=dontinline,*VolatileTest.test的意思是,不要对test inline化, 通配符*通配package名
-// -XX:CompileCommand=compileonly,*VolatileTest.test 
+// -XX:CompileCommand=compileonly,*VolatileTest.test
 // java 9里ok, 7,8可能不行
 java -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly -Xcomp -XX:CompileCommand=dontinline,*VolatileTest.test -XX:CompileCommand=compileonly,*VolatileTest.test VolatileTest
 
 ```
 
-把java运行时的cpu指令打印出来： 
+把java运行时的cpu指令打印出来：
 ```asm
 vmovapd %xmm0,%xmm1     ; 加
 vmulsd %xmm1,%xmm1      ; 乘
