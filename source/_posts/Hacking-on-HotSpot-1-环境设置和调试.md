@@ -32,10 +32,10 @@ hg tclone http://hg.openjdk.java.net/jdk9/dev jdk9-dev
 ```
 
 #### hsdis-amd64.so
-这个工具用来输出运行时的汇编, 网上下载hsdis-amd64.so, 把路径添加到LD_LIBRARY_PATH.
+这个工具不是必须的, 是用来输出运行时的汇编, 网上下载hsdis-amd64.so, 把路径添加到LD_LIBRARY_PATH.
 
 
-## 2. 编译OpenJDK 9
+## 1. 编译OpenJDK 9
 在centos6上碰到不少问题, 在Ubuntu1604比较顺利, 我在多台Ubutun上都很顺利,没有碰到奇怪的问题. 相比以前的jdk7, 现在jdk9编译起来顺利多了.  先安装需要的依赖:
 ```
 sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev
@@ -56,16 +56,15 @@ bash configure --with-native-debug-symbols=internal --with-debug-level=slowdebug
 注意, 这些--with-xxx-xxx的参数, 可能会变, 如果报错, 去autoconf目录里grep一把, 具体解决.
 
 
-
-## 调试
+## 2. 调试
 
 #### netbeans
-用netbeans打开 common/nb_native/下的netbeans工程就可以了. 右键在Projects区里的工程, 设置Debug参数, 比如
+如果用netbeans, 用netbeans IDE打开 common/nb_native/下的netbeans工程就可以了. 右键在Projects区里的工程, 设置Debug参数, 比如
 ```
 Debug command:  ${OUTPUT_PATH} XxJavaApp
 ```
 #### gdb
-比如用gdb脚本:
+我用netbeans看代码, 用gdb调试, 这里一个gdb脚本例子:
 cat myscript.gdb
 ```
 file ./build/linux-x86_64-normal-server-slowdebug/images/jdk/bin/java
@@ -82,7 +81,7 @@ run MyJavaApp
 ```
 gdb --command=myscript.gdb
 ```
-## 3. 例子
+
 运行上面的gdb脚本, 断点处停下来, 看看call stack,
 ```
 (gdb) bt
