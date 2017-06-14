@@ -7,11 +7,10 @@ tags:
 category: 技术
 ---
 
-近期有人和我讨论java volatile, 人老脑子懵，我还volatile不是atomic的云云，神经还搭在C++ 的volatile坑里没恢复过来, 过来一阵才反应过来, 这是Java的volatile.
 几年前曾给同事做过一个java内存模型的knowledge sharing, 摘取部分内容放这, 简单的回顾下内存模型, 然后从JVM hotSpot实现的角度来仔细看看volatile的语义. 就此契机,整理出来.
 <!-- more -->
 
-### 1. reorder和memory barrier
+## 1. reorder和memory barrier
 指令执行的reorder有两个原因，一是编译器的优化，二是CPU执行的优化.
 cpu硬件优化的out-of-order机制会导致指令的reorder. 另外，CPU的各个核有自己的registers和cache(L1,L2,L3)，cache更新一致性协议会导致reorder，从cache角度更明了的体现了memory model中visibility概念的来源.
 
@@ -56,7 +55,7 @@ thread1:
 * release == StoreStore| LoadStore
 这样，acquire/release概念就不晦涩了. btw, C++ 11里支持low-level的acquire/release语义.
 
-### 2. x86/64 CPU的Memory Model
+## 2. x86/64 CPU的Memory Model
 从Intel手册里能看到:
 * Reads are not reordered with other reads.
 不需要特殊fence指令就能保证LoadLoad
@@ -91,7 +90,7 @@ inline void OrderAccess::fence() {
 }
 ```
 
-### 3. Java volatile
+## 3. Java volatile
 规范里说:
 1. reads & writes act as aquire & release
 2. make non atomic 64-bit operations atomic: long and double
@@ -137,7 +136,7 @@ void TemplateTable::putfield_or_static() {
 从代码和注释能看到，原子性的保证，还有内存屏障的语义的实现.
 写完后加的StoreLoad | StoreStore(注意这里是汇编的barrier了，没compiler的事)，第2小节里我们知道StoreLoad需要一个lock，这个指令x86上可以做为memory barrier指令.
 
-### 4. Java volatile 实验 (show me the code...)
+## 4. Java volatile 实验 (show me the code...)
 ```java
 //debug hotspot: break TemplateTable::volatile_barrier
 class VolatileTest {
@@ -174,5 +173,5 @@ lock addl $0x0, 0x40(rsp) ; putstatic volatileVar
 
 ```
 
-### 5. C++ volatile != Java volatile
+## 5. C++ volatile != Java volatile
 Java volatile其实和C++ std::atomic<T>有些类似. 详见Herb Sutter[文章](http://www.drdobbs.com/parallel/volatile-vs-volatile/212701484)

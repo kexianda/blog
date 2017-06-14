@@ -28,6 +28,7 @@ tags:
 
 QPI(Intel QuickPath Interconnect)是用来链接不同处理器. 这里有篇文章[A Deeper Look Inside Intel QuickPath Interconnect](http://www.drdobbs.com/go-parallel/article/print?articleId=222301437)), 处理器间cache coherence通过QPI来处理. 随着core/socket(processor)的增加, cache coherence更加复杂和成本也在上升.
 
+#### Thrashing
 访问memory和cache之间存在很大的差距, 如果没有cache, CPU快也没有用只能干等. 一般而言, 现在的x86 CPU有非常好cache hit rate(90%+), 可参考[这篇文章](https://www.extremetech.com/extreme/188776-how-l1-and-l2-cpu-caches-work-and-why-theyre-an-essential-part-of-modern-chips).  
 特殊情况下, 数据被load到cache, 又迅速的被丢弃, 会导致效率低下([CPU cache thrashing](https://pomozok.wordpress.com/2011/11/29/cpu-cache-thrashing/)). 非常类似操作系统中内存管理中的Thrashing概念. cahce line不停换进换出.
 一个例子演示下:
@@ -45,8 +46,8 @@ for (int i=0; i<SIZE; i++) {
 
 另, [这篇](http://cenalulu.github.io/linux/numa/)也可以参考.
 
-## 3. instanceOf 在HotSpot中的优化和问题
-### 3.1 instanceOf的语义和实现
+## 2. instanceOf 在HotSpot中的优化和问题
+### instanceOf的语义和实现
 [RednaxelaFX](https://www.zhihu.com/people/rednaxelafx/)在知乎有个很好的[回答](https://www.zhihu.com/question/21574535), R大由浅入深, 然后深入得只能JVM开发者才能懂:-)
 
 >作者：RednaxelaFX
@@ -104,7 +105,7 @@ bool Klass::search_secondary_supers(Klass* k) const {
 }
 ```
 
-### 3.2 instanceOf的并发性能问题
+### instanceOf的并发性能问题
 这里关心的点, 就是HotSpot源码中这个_secondary_super_cache被设置. instanceOf调用时, _secondary_super_cache不停的被设置, 在多核或多CPU高并发环境里.
 比如下面情况, 有个基础的类class A, instanceOf操作极频繁:
 ```
