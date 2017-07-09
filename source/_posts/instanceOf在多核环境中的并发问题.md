@@ -26,6 +26,9 @@ tags:
 | QPI*  |  ~40 ns  |
 | DRAM  |  ~65 ns  |
 
+Barriers can be very expensive (typically 1000s to 10000s of
+clock cycles).
+
 QPI(Intel QuickPath Interconnect)是用来链接不同处理器. 这里有篇文章[A Deeper Look Inside Intel QuickPath Interconnect](http://www.drdobbs.com/go-parallel/article/print?articleId=222301437)), 处理器间cache coherence通过QPI来处理. 随着core/socket(processor)的增加, cache coherence更加复杂和成本也在上升.
 
 #### Thrashing
@@ -48,7 +51,7 @@ for (int i=0; i<SIZE; i++) {
 
 ## 2. instanceOf 在HotSpot中的优化和问题
 ### instanceOf的语义和实现
-[RednaxelaFX](https://www.zhihu.com/people/rednaxelafx/)在知乎有个很好的[回答](https://www.zhihu.com/question/21574535), R大由浅入深, 然后深入得只能JVM开发者才能懂:-)
+[RedaxelaFX](https://www.zhihu.com/people/rednaxelafx/)在知乎有个很好的[回答](https://www.zhihu.com/question/21574535), R大由浅入深, 然后深入得只能JVM开发者才能懂:-)
 
 >作者：RednaxelaFX
 链接：https://www.zhihu.com/question/21574535/answer/18998914

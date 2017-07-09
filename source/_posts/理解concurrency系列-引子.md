@@ -1,0 +1,99 @@
+---
+title: 理解concurrency系列-引子
+date: 2017-07-09 20:28:06
+category: 技术
+tags: 并发
+---
+
+## 引子
+近期和客户(某国内互联网大厂)合作,优化他们的Hive on Cloud项目, 发现并修复了一些并发问题, 一个对技术感兴趣的实习生同事和我讨论了一些技术细节问题, 使我有个想法, 想把个人对并发(我这里说的并发是指Java/C++这种共享内存模式的并发,不是指Actor或协程那些)的一些理解, 系统的记录下来.
+要深入理解并发, 涉及到少许硬件基本知识, 操作系统的线程进程以及进程间通信的知识(可以Linux内核为例). 在这些基础上, 才能更好的理解更高一级的抽象: 比如互斥锁,信号量等.
+
+1. 概念太多,不同层次的抽象,各个分支, 如何有组织有条理的阐述?  
+
+CPU的内存模型, Java的内存模型, 高层抽象的mutex, semaphore, condition等, 重入锁, 读写锁. 还有什么悲观所乐观锁又是另外一个角度, 自旋锁,偏向锁等等. 总之概念很多. 还有表述问题, 比如我们谈到锁, 有时候可能暗指的是某个原子操作的变量(flag/state), 有时候指的的是包括这个state和相关的线程等待队列.
+
+2. 深入程度怎么把握, 细节蔓延的太多, 会不会影响条理和简洁.  
+
+比如对互斥锁信号量等锁的理解: 就是一个状态变量/原子操作,另一个是线程阻塞/唤醒队列的管理,很简单. 但是如果打破砂锅问到底, 可以对细节很深入了解. 比如Java的ReentrantReadWriteLock, 实现里有个sync(用作同步), 需要了解AbstractQueuedSynchronizer类以及primitive LockSupport/UNSAFE的实现. 继续深入, 看去看JVM是如何用pthread_cond_t/pthread_mutex_t等pthread api实现的; 再深入, pthread(glibc的NPTL)又是怎么做的(glibc的代码非常非常的难读). 继续没完没了, 再深入就需要理解NPTL的基础即Linux系统调用futex, 再深入就看futex在内核是怎样实现的. 也许没有必要关注所有细节, 但了解各个层次实现的核心逻辑还是很有好处的.
+还有, 比如用java的线程池ThreadPoolExecute, 如何处理InterruptedException, 以及为什么要这么处理, interupt到底怎么回事, 在JVM层怎么实现?操作系统里怎么回事?
+
+要把这些知识整理得深入浅出是要水平的,很花精力和时间. 我非常认同左耳朵耗子说的, 技术文章要写得在马桶上拉屎时都能看懂才是好文章:-) 但这其实要求很高,要有深入理解和很好的有条理的表达. 而我水平有限, 有些技术点研究也不够深入, 精力和时间也不够,也不知道能写的怎么样,能写多少, 不管怎样, 先列个提纲, 以后有空慢慢写, 不是很清楚的细节, 可以边写边研究.
+
+## 大纲
+我个人理解, 并发的核心:
+1. 一个是有序性，可见性，原子性. 从底层角度, 指令重排和内存屏障,CPU的内存模型的理解.
+2. 另一个是线程的管理, 阻塞, 唤醒, 相关的线程队列管理(内核空间或用户空间)
+
+了解CPU内存模型和相关指令后,能更好的理解所谓有序性,可见性,原子性, 还有Java中更抽象一层的内存模型概念,happens-before synchronized-with等等. 在了解线程的管理后, 能更好的理解各种高层的抽象概念的各种锁, 同步的含义.  
+所以,我打算先从硬件底层开始, 然后简单的聊下线程和并发原语在glibc和Linux内核的实现, 以及Linux内核的进程管理. Java层抽象的内存模型的文章海了去, 不着重重复. 有了这些基础,然后聊聊Java并发原语在JVM HotSpot中实现细节. 最后简述下J.U.C(java.util.concurrent)的实现.
+
+带着问题出发: 一个互斥锁到底是个啥玩意, lock()/unlock()在指令层或操作系统层面到底做了啥?
+
+### 1. 硬件相关角度的basic concepts
+#### 1.1 硬件知识， CPU cache， MESI, SMP/NUMA简单介绍, 参考文献
+
+#### 1.2 指令重排序和内存屏障, CPU的内存模型
+* LoadLoad, LoadStore, StoreLoad, StoreStore语义  
+* acquire, release语义  
+这些语义在x86中的实现,在ARM/PowerPC中又是如何实现, 不妨以JVM HotSpot的实现举例子
+
+#### 1.3 x86_64为例, 各种指令和成本
+* CAS的指令支持, ABA问题,
+* 以及lock 指令prefix, fence，mfence， lfence，sfence，作用以及成本.  
+对成本有个感性的理解, 能更好理解为啥java synchronized关键字在JVM的偏向锁等等优化, 以及各种lock-free实现的目的.
+
+### 2. 线程在glibc/NPTL和Linux内核实现及调度和通信简介
+
+* 线程/进程/轻量级进程(LWP)
+* 进程切换(switch)
+* 中断
+
+
+### 3. linux提供的快速同步/互斥机制Futex(Fast Userspace muTEXes)
+* futex
+* 实现细节
+
+### 4. 并发基础原语pthread_mutex/pthread_cond等在glibc/NPTL中的实现
+
+* pthread_cond_t (pthreadtypes.h)
+* pthread_mutex_t
+* pthread_cond_wait
+* ...
+
+Windows:
+Condition variables are synchronization primitives [Condition variables](https://msdn.microsoft.com/en-us/library/windows/desktop/ms682052(v=vs.85).aspx)
+
+### 5. Java/C++的内存模型简述
+* java final等关键字的行为等.
+* C++中局部static变量初始化等含义.
+* happen before
+* volatitle/synchronized语义
+* ...
+
+
+### 6. Java并发基础原语在JVM HotSpot上实现
+
+#### 6.1 Java 并发基础原语(1) Java volatile在HotSpot中的实现，
+#### 6.2 Java 并发基础原语(2) synchronized在HotSpot中的实现
+#### 6.3 Java 并发基础原语(3) unsafe/variablehandler(java 9)HotSpot中的实现
+#### 6.4 Java 并发基础原语(4)：LockSupport类
+Basic thread blocking primitives   
+
+### 7. J.U.C(java.util.concurrent)简述
+#### 7.1 J.U.C atomic
+#### 7.2 J.U.C 核心类AQS(AbstractQueuedSynchronizer)
+#### 7.3 J.U.C 读写锁ReentrantReadWriteLock，
+#### 7.4 J.U.C 重入锁RentrantLock
+#### 7.5 J.U.C 其他cyclicBarrier, CountDownLatch...
+
+#### 7.6 J.U.C 线程池ThreadPoolExecutor/InterruptedException
+#### 7.7 Thread/Runnable
+
+### 8. lock free和例子
+
+### 9. 实战中碰到的某些并发例子
+#### threads和memory泄露了, 死锁了, 如何发现和修复
+#### 有趣的instanceOf例子
+
+/// 未完待续
