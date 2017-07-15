@@ -5,10 +5,9 @@ tags:
 - 并发
 date: 2017-07-15 12:26:58
 ---
-儿子最近不在家, 我开机时也没人过来胡锤我的键盘了. 有空来写篇技术文章, 不是宏大的分布式大数据深度学习啥, 深入扣个细节, 就像孔乙己写"回"字, 回囘囬廻...
+儿子最近不在家, 我开机时也没人过来胡乱锤打我的键盘了. 有空来写篇技术文章, 不是宏大的分布式大数据深度学习啥, 深入扣个细节, 就像孔乙己写"回"字, 回囘囬廻...
 
-Condition Variable是同步原语(synchronization primitives), 用来协调不同线程的逻辑顺序.
-和实习生同事小T讨论时, 谈到了两个问题:
+Condition Variable是同步原语(synchronization primitives), 用来协调不同线程的逻辑顺序. 和实习生同事小T讨论时, 谈到了两个问题:
 1. 有了mutex, 为啥还有整个Condition variable的概念出来?
 2. Condition为什么要跟一个锁(mutex)一起用? 比如, pthread_cond_wait(cond, mutex), Java里的condition是由锁newCondion()生成.
 
@@ -21,7 +20,7 @@ mutex呢, 就是线程们一起竞争锁, 谁拿到谁先跑. 用来保护Critic
 Condition呢, 就是线程们干活前先看看, 是否满足开始干活的条件, 不满足则让系统休眠自己.
 生产者消费者例子是个典型. 消费者需要等到有数据, 消费者需要等到空间.
 再比如接立赛上, 第二棒B跑道上站好准备了,但是不能跑, 没有拿到第一棒传来的交接棒, 于是等待(cond_wait), 第一棒A跑完某100米(条件满足了), 把交接棒给第二棒B(A发个signal). 第二棒B拿到了交接棒(wake up)接下去就开跑.  
-这种同步(次序的协调关系)用单纯的互斥锁实现很费劲容易死锁. 不信你可以试试. 用Condition variable, 对用程序员而言, 直观了很多.
+这种同步(次序的协调关系)用单纯的互斥锁实现很费劲. 用Condition variable, 对用程序员而言, 直观了很多.
 
 ## 2. 为什么需要mutex和Condition variable一起用?
 Java的同步原语在HotSpot中linux平台上都是用pthread实现的, C++标准库也只是定义接口, 在linux平台也是pthread/NPTL实现的.
