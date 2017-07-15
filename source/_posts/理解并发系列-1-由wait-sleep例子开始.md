@@ -2,7 +2,7 @@ title: 理解并发系列(1) 由wait/sleep例子开始
 categories:
 - 技术
 tags:
-  - 并发
+- 并发
 date: 2017-07-10 21:45:57
 ---
 
