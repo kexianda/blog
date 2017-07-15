@@ -47,6 +47,8 @@ A线程活没干完但缺少啥东西了, 自己在这个monitor上wait()一把,
 为什么要这样, 我个人理解是觉得是语义使然. wait和notify搭配使用, 比如生产者消费者情景, 消费者需要等待,那么wait, 放弃锁.  生产可以拿到锁生产数据然后notify消费者.  如果wait不放弃锁, 那么后面的生产拿不到锁,更无法notify了.
 可以参考[这篇文章](http://www.xyzws.com/javafaq/why-wait-notify-notifyall-must-be-called-inside-a-synchronized-method-block/127)
 
+Java里的wait/notify和Condition Variable类似, 会写一篇文章继续深入讨论Condition Variable.
+
 
 ## 3. JVM里怎么实现wait的语义
 
