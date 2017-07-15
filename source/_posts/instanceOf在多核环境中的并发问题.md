@@ -1,9 +1,10 @@
----
 title: instanceOf在多核环境中的并发问题
-date: 2017-06-09 22:23:56
+categories:
+- 技术
 tags:
- - HotSpot
- - 并发
+- HotSpot
+- 并发
+date: 2017-06-09 22:23:56
 ---
 同事分享了通过profiling发现的高并发性能问题, [一个Spark的性能问题](https://www.slideshare.net/SparkSummit/accelerating-spark-genome-sequencing-in-clouda-data-driven-approach-case-studies-and-beyond-spark-summit-east-talk-by-lucy-lu-and-eric-kaczmarek) 和[一个Cassandra的性能问题](https://issues.apache.org/jira/browse/CASSANDRA-12787), 涉及到:
 - Scala Scalability Issue

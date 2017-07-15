@@ -1,6 +1,8 @@
 title: template argument deduction
-tags: C++ 
-category: 技术
+categories:
+- 技术
+tags:
+  - C++
 date: 2014/11/25
 ---
 
@@ -14,36 +16,36 @@ C++11加入了rvalue reference的概念后，类型推导规则更加复杂了�
 先说明一下几个术语。模板函数的形数parameter简称为 P，实参argument简称为 A. 编译器推导是指根据P/A pair推导出P的真正Type。 推导过程中，通过一定规则对P/A进行调整. P调整后称为deduced A, A调整后称为tranformed A.  
 
 推导规则
-一般来说deduced A==tranformed A，如果不相同，再由额外规则处理。多个参数的情况，则对每个P/A pair分别进行推导，如果有不一致，则失败。有一点，在标准里没找到（我没有通读），if A is reference type，*tranformed A* is the type referred by A. 
+一般来说deduced A==tranformed A，如果不相同，再由额外规则处理。多个参数的情况，则对每个P/A pair分别进行推导，如果有不一致，则失败。有一点，在标准里没找到（我没有通读），if A is reference type，*tranformed A* is the type referred by A.
 
 ### (Rule 1) if P is NOT a reference type
 >(rule 1): if P is NOT a reference type: ([N3690][1], 14.8.2.1/2)
 * 1.1 A is array, array-to-pointer conversion
 * 1.2 A is function type, function-to-pointer conversion
 * 1.3 if A is cv-qualified type, top level cv-qulifiers of A's type are ignored
-  
+
 看例子，具体的推导过程写在注释里。
 ```cpp
 template <class T> void f(T);
- 
+
 int a[3];
 f(a);     // P = T,  
 	  // A = int[3], after adjustment, transformed A is int*. (Rule 1.1)
 	  // T -> int*   calls: f<int*>()
 
 void g(int);
-f(g); // P = T, 
+f(g); // P = T,
       // A = void(int), adjusted to void(*)(int).  (Rule 1.1)
       // T -> void(*)(int)  calls:f<void(*)(int) >()
 
 const int b = 13;
-f(b); // P = T, 
+f(b); // P = T,
 	  // A = const int, transformed A is int. (Rule 1.3)
 	  // T -> int  calls:f<int>()
 
 //A is a reference
 Foo&& fref = Foo();
-f (fref);// P = T, 
+f (fref);// P = T,
 	  // A = Foo&&.   'Foo' is used for deduction
 	  // T -> Foo.   calls:f<Foo>(Foo)
 ```
@@ -90,12 +92,12 @@ Foo && xvalue() { Foo f; return static_cast<Foo&&>f; }  //funciton call is an xv
 Foo && ref = xvalue ();
 fun_rvalue_ref_param ( ref  );
 ```
-推导结果却不是fun_rvalue_ref_param<Foo>(Foo &&) 了， 虽然 ref  和 xvalue的类型(Type)是一样的，但是推导就是不一样，看下一条规则。 
+推导结果却不是fun_rvalue_ref_param<Foo>(Foo &&) 了， 虽然 ref  和 xvalue的类型(Type)是一样的，但是推导就是不一样，看下一条规则。
 
 ### (Rule 4) special case:  P is T&&, and A is an lvalue
  > ([N3690][1], 14.8.2.1/3)  if P is rvalue refernce to a cv-unqualified template parameter and the argument is an lvalue, the type "lvalue reference to A" is used in place of A for type deduction (special case)
 
-如果模板参数P是T或者T&, 那么类型推导只需要关注P/A的类型即可。 但是当P 为 T&&时，则还涉及expresion category taxonomy。类型推导不仅仅关注P/A的类型，还要关注A 这个expression的category是lvalue 还是xvalue,  pvalue. 
+如果模板参数P是T或者T&, 那么类型推导只需要关注P/A的类型即可。 但是当P 为 T&&时，则还涉及expresion category taxonomy。类型推导不仅仅关注P/A的类型，还要关注A 这个expression的category是lvalue 还是xvalue,  pvalue.
 这里多举几个例子，涉及了几个推导规则。每一个都有详细的推导过程。
 
 ```cpp
@@ -195,7 +197,7 @@ a difference:
 ```cpp
 template<typename T> void f1(const T& t);
 bool a = false;
-f1(a); // P=const T&, adjusted to const T, A=bool, 
+f1(a); // P=const T&, adjusted to const T, A=bool,
        // deduced T = bool, deduced A = const bool
        // deduced A is more cv-qualified than A
 ```
@@ -215,9 +217,9 @@ f(p); // P=T, A=int*
 ```cpp
 template <class T> struct B { };
 template <class T> struct D : public B<T> {};
- 
+
 template <class T> void f(B<T>&){}
- 
+
 void f() {
     D<int> d;
     f(d);  // P = B<T>&, adjusted P = B<T> (a simple-template-id)
@@ -235,13 +237,13 @@ void f() {
 ```cpp
 // the identity template, often used to exclude specific arguments from deduction
 template <typename T> struct identity { typedef T type; };
- 
+
 template <typename T>
 void bad(std::vector<T> x, T value = 1);
- 
+
 template <typename T>
 void good(std::vector<T> x, typename identity<T>::type value = 1);
- 
+
 std::vector<std::complex<double>> x;
 bad(x, 1.2); // P1 = std::vector<T>, A1 = std::vector<std::complex<double>>
              // P1/A1 deduction determines T = std::complex<double>
@@ -273,6 +275,6 @@ f(arr); // P1 = const std::vector<T> &, A1=std::vector<std::string> lvalue,
 注：
 1. [标准链接][1]是草稿,只有微小差别，可以去isocpp.org找最新版.
 
-[1]: http://isocpp.org/files/papers/N3690.pdf 
+[1]: http://isocpp.org/files/papers/N3690.pdf
 [2]: http://en.cppreference.com/w/cpp/language/template_argument_deduction
 [3]: http://kexianda.info/2014/11/20/cpp_basic_concepts

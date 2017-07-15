@@ -1,6 +1,8 @@
 title: C++ basic concepts (1)
-tags: C++
-category: 技术
+categories:
+- 技术
+tags:
+- C++
 date: 2014/11/20
 ---
 
@@ -244,8 +246,3 @@ rref&& r4 = 1; // type of r4 is int&&
 [2]: http://eli.thegreenplace.net/2011/12/15/understanding-lvalues-and-rvalues-in-c-and-c
 
 [3]: http://stackoverflow.com/questions/3601602/what-are-rvalues-lvalues-xvalues-glvalues-and-prvalues
-
-
-
-
-

@@ -1,10 +1,10 @@
----
 title: 从HotSpot源码看Java volatile
-date: 2017-04-28 22:51:49
+categories:
+- 技术
 tags:
- - HotSpot
- - 内存模型
-category: 技术
+- HotSpot
+- 内存模型
+date: 2017-04-28 22:51:49
 ---
 
 几年前曾给同事做过一个java内存模型的knowledge sharing, 摘取部分内容放这, 简单的回顾下内存模型, 然后从JVM hotSpot实现的角度来仔细看看volatile的语义. 就此契机,整理出来.

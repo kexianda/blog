@@ -1,11 +1,12 @@
 ---
 title: 由WannaCry蠕虫说说密码学原语
+categories: 技术
 date: 2017-05-30
 tags:
  - 密码学原语
  - HotSpot
  - 汇编优化
-category: 技术
+
 ---
 
 WannaCry这阵子让很多人欲哭无泪， 感染蠕虫后， 网上各种分析和破解办法，然而没有能彻底解决问题的方法. 因为WannaCry的RSA+AES加密套餐，文件被AES算法加密, 而AES的key用RSA算法加密了. 理论上, 目前很难破解.  

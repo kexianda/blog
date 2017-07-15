@@ -6,8 +6,8 @@
 title: 柯贤达
 subtitle: 人,诗意地栖居在大地上。
 description:
-author: 柯贤达 powered by hexo
-language: zh-CN
+author: 柯贤达
+language: zh-Hans
 timezone:
 
 # URL
@@ -63,7 +63,7 @@ pagination_dir: page
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: light
+theme: hexo-theme-next
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html

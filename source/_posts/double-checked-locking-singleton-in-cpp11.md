@@ -1,15 +1,10 @@
 title: Double-checked Locking
-
+categories:
+- 技术
 tags:
-
-	- C++
-
-	- 多线程
-
-category: 技术
-
+- C++
+- 多线程
 date: 2014/12/28
-
 ---
 
 在学习C++11多线程的时候，会碰到一大堆概念，mutex, lock, atomic, memory model, memory barrier， lock-free等。要更好的理解，可以：

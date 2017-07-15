@@ -1,9 +1,9 @@
----
 title: Hacking on HotSpot (1) 环境设置和调试
-date: 2017-06-03
+categories:
+- 技术
 tags:
- - HotSpot
-category: 技术
+- HotSpot
+date: 2017-06-03
 ---
 调试HotSpot的环境配置的资料确实比较少. 想提交patch或者有时候好奇需要深入一下JVM看看具体的实现, 需要配置下开发环境. 这里记录整理一下.
 有人写过Mac上配置, Windows的环境没查到,我也没弄过, 估计宇宙第一IDE的Visual Studio应该很好使:-)

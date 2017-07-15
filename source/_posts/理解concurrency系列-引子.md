@@ -1,8 +1,9 @@
----
 title: 理解concurrency系列-引子
+categories:
+- 技术
+tags:
+- 并发
 date: 2017-07-09 20:28:06
-category: 技术
-tags: 并发
 ---
 
 ## 引子
