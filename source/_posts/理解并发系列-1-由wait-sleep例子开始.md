@@ -33,7 +33,7 @@ A线程持有锁的过程, A线程发现flag没人标记, 那它来标记好, fl
 所谓继续持有锁, 在上面的代码例子就是, sleep后, flag里继续保持自己的标记, 别人过来,自动闪开.
 
 
-### 稍微稍微详细精确一点儿说,  
+### 稍微详细一点儿说,  
 Java的synchronized会编译成monitorenter/monitorexit两条bytecode. 具体的语义, JVM来翻译实现.
 
 这里synchronized的锁, 是个monitor(在HotSpot是ObjectMonitor类), monitor里有个owner字段, 表示谁拥有它, monitor里有线程队列(更准确的讲有两个_EntryList和_WaitSet).   
