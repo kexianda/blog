@@ -20,7 +20,7 @@ mutex, 就是线程们一起竞争锁, 谁拿到谁先跑. 用来保护Critical 
 Condition, 就是线程们干活前先看看, 是否满足开始干活的条件, 不满足则让系统休眠自己.
 生产者消费者例子是个典型. 消费者需要等到有数据, 消费者需要等到空间.
 再比如接立赛上, 第二棒B跑道上站好准备了,但是不能跑, 没有拿到第一棒传来的交接棒, 于是等待(cond_wait), 第一棒A跑完某100米(条件满足了), 把交接棒给第二棒B(A发个signal). 第二棒B拿到了交接棒(wake up)接下去就开跑.  
-这种同步(次序的协调关系)用单纯的互斥锁实现很费劲. 用Condition variable, 对用程序员而言, 直观了很多. 这时候我对问题(1)的回答.
+这种同步(次序的协调关系)用单纯的互斥锁实现很费劲. 用Condition variable, 对用程序员而言, 直观了很多. 这是对问题(1)的回答.
 
 ## 先看Condition variable怎么用
 
@@ -110,7 +110,7 @@ __pthread_cond_wait (pthread_cond_t *cond;
 ```
 
 ## 回答前面的问题
-根据我读glibc的个人理解, 我来回答问题(2):
+根据我读glibc的个人理解,
 ### Condition variable需要mutex来保护条件变量
 条件变量的判断过程不能有data racing.
 不能发生这种情况:
@@ -119,6 +119,7 @@ __pthread_cond_wait (pthread_cond_t *cond;
 * 然后A呢切回继续运行,准备加入condition关联的等待队列休眠自己. 然后就可能醒不过来了, 因为B不会发signal给A了.
 
 流程图里的(1)mutex.lock和(3)mutex.unlock保护了 (2) pred()期间, 条件不要改动.
+这是对问题(2)的回答.
 
 ### 为什么Condition variable wait都有个while loop?
 
