@@ -1,4 +1,4 @@
-title: 理解并发系列(2)-为什么要有Condition Variable?
+title: [并发系列-2]-为什么要有Condition Variable?
 category:
 - 技术
 tags:
@@ -66,12 +66,12 @@ while(flag == true) {
 Java的同步原语Condition在linux平台上HotSpot中是用pthread实现的, C++标准库也只是定义接口, 在linux平台也是pthread/NPTL实现的.
 原理都是一回事. 所以,这里仅以glibc/NPTL为例来看实现和讨论为什么.[知乎里也有类似讨论][1],可以看看.
 我看了下glibc的代码,谈谈我的理解.
-### 简单的流程图:
+### glibc wait的简单流程图:
 蓝色框里就是pthread_cond_wait的简化逻辑. 里面调用了linux的系统调用futex_wait,把休眠自己交出CPU, 这个也有意思,可以深入了解下, 不过这里暂且略过.
 
 ![](http://ot49rzljt.bkt.clouddn.com/image/tech/pthread_cond_wait.png)
 
-### glibc中实现
+### glibc/JDK中的实现
 简化了逻辑，暂且只关心最核心的基本逻辑，我加上自己的理解作为注释, 省略部分可以自己去看源码(glibc的代码太难读了...)
 ```c
 // https://github.com/lattera/glibc/blob/master/nptl/pthread_cond_wait.c
@@ -108,6 +108,27 @@ __pthread_cond_wait (pthread_cond_t *cond;
 }
 
 ```
+熟悉JDK的话, 发现这个逻辑和J.U.C.AbstractQueuedSynchronizer.ConditionObject.await()很类似.
+```Java
+public final void await() throws InterruptedException {
+    if (Thread.interrupted())
+        throw new InterruptedException();
+    Node node = addConditionWaiter();
+    int savedState = fullyRelease(node);
+    int interruptMode = 0;
+    while (!isOnSyncQueue(node)) {
+        LockSupport.park(this);
+        if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
+            break;
+    }
+    if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
+        interruptMode = REINTERRUPT;
+    if (node.nextWaiter != null) // clean up if cancelled
+        unlinkCancelledWaiters();
+    if (interruptMode != 0)
+        reportInterruptAfterWait(interruptMode);
+}
+```
 
 ## 回答前面的问题
 根据我读glibc的个人理解,
@@ -131,6 +152,7 @@ __pthread_cond_wait (pthread_cond_t *cond;
 * A1如果不再次检查 pred, 是否需要睡眠, 就会在条件不满足的情况下去干(6), 而(6)必须在pred()==false,才能做. 显然出问题了.  
 
 这就是为什么要加个while loop. 回答了问题(3).
+[update: 有个术语spurious wakeup描述这种情况]
 
 ## 小结
 Condtion Variable是个比mutex稍复杂的原语, 这个抽象了一层的概念, 给程序员带来方便. 典型应用场景有生产者消费者.  

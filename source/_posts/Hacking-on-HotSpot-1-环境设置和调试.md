@@ -47,6 +47,8 @@ sudo apt-get install libelf-dev
 cd ~/jdk/jdk9-dev
 bash configure --with-native-debug-symbols=internal --with-debug-level=slowdebug
 
+make images
+
 # 或者建另一个目录
 # mkdir ../build && cd ../build && bash ../jdk9-dev/configure --with-native-debug-symbols=internal --with-debug-level=slowdebug
 ```
