@@ -1,9 +1,9 @@
 ---
 title: '[并发系列-3] 从AQS到futex(一): AQS和LockSupport'
-category:
-- 技术
+categories: 技术
 tags:
 - 并发
+date: 2017-08-13
 ---
 
 ASQ(AbstractQueuedSynchronizer,同步器)是java.util.concurrenct包一个核心基础类, 来用构建锁或其他同步组件. 网上对这个的分析文章非常多,有源代码解读还有画出图示意线程队列的管理([链接](http://blog.csdn.net/javazejian/article/details/75043422)). 可以看Doug Lea的[AQS论文](http://gee.cs.oswego.edu/dl/papers/aqs.pdf)([中文版](http://ifeve.com/aqs-2/)).

@@ -1,4 +1,4 @@
-title: 理解并发系列(1) 由wait/sleep例子开始
+title: '[并发系列-1] 由wait/sleep例子开始'
 categories:
 - 技术
 tags:
