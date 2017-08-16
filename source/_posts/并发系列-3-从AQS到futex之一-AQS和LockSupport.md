@@ -6,15 +6,18 @@ tags:
 date: 2017-08-13
 ---
 
-ASQ(AbstractQueuedSynchronizer,同步器)是java.util.concurrenct包一个核心基础类, 来用构建锁或其他同步组件. 网上对这个的分析文章非常多,有源代码解读还有画出图示意线程队列的管理([链接](http://blog.csdn.net/javazejian/article/details/75043422)). 可以看Doug Lea的[AQS论文](http://gee.cs.oswego.edu/dl/papers/aqs.pdf)([中文版](http://ifeve.com/aqs-2/)).
+AQS(AbstractQueuedSynchronizer,同步器)是java.util.concurrenct包一个核心基础类, 来用构建锁或其他同步组件. 网上对这个的分析文章非常多,有源代码解读还有画出图示意线程队列的管理([链接](http://blog.csdn.net/javazejian/article/details/75043422)). 也可以通过Doug Lea的[AQS论文](http://gee.cs.oswego.edu/dl/papers/aqs.pdf)([中文版](http://ifeve.com/aqs-2/))看看AQS的设计思想.
 
 从另外一个角度,继续深入一下:
 * (JDK) J.U.C (AQS/LockSupport) =>
 * (JVM) HotSpot (Thread/Parker) 线程和block/unblock实现 =>
 * (C runtime) 到glibc中的pthread(NPTL)的实现 =>
-* (Kernel) Linux内核的线程和futex 的实现
+* (Kernel) Linux内核的线程和futex的介绍
 
 从AQS到HotSpot, 再到glibc, 最后到内核的futex. 纵向一条线深入下来, 粗略地了解下各个层次的实现, 做个笔记.
+问: 整这个有用么?
+答: 没啥用. 还是类似孔乙己写回字.
+
 <!--more-->
 ## AQS简述
 同步器的语义其实很直观, 就是内部有个原子性的状态变量(锁变量), 同步器实现线程队列的管理和线程的block/unblock.
@@ -33,7 +36,7 @@ release():
 
 在J.U.C的实现中, AQS有两个队列, 一个是同步队列,线程被阻塞了,等待获取锁. 另一个是条件队列. 队列节点是内部类Node. 内部类ConditionObject用来构建条件队列，当Condition.wait()后，线程将会加入条件队列中; Condition.signal()后，线程将从条件队列转移动同步队列中进行锁竞争。
 
-在具体实现中, AQS不仅是简单的acquire和release,会更精细的API, 比如:  
+在具体实现中, AQS不仅是简单的acquire和release,有更精细的API, 比如:  
 * 独占/共享模式的 acquire/acquireShared和release/releaseShared  
 所谓独占共享模式,得看具体的逻辑, 比如,CountDownLatch和ReentrantReadWriteLock的独占分享锁的逻辑不一样, 所以AQS需要子类自己去定义.
 * 阻塞式非阻塞式, acquire/tryAcquire  
