@@ -4,10 +4,10 @@ categories: 技术
 tags:
 - 并发
 - HotSpot
-date: 2017-08-13
+date: 2017-08-16
 ---
 
-J.U.C.中AQS管理线程队列, LockSupport用来block/unblock线程. 在HotSpot JVM层, 一个OS Thread对应java层的一个线程,  LockSupport通过unsafe的park/unpark实现阻塞/唤醒线程. 通过HotSpot(Java 9)的源码来看看:
+J.U.C.中AQS管理线程队列, LockSupport用来block/unblock线程. 通过HotSpot(Java 9)的源码来粗略的看看JVM这层的实现:
 * HotSpot的Thread/JavaThread类的简介
 * HotSpot的Parker的实现细节
 <!--more-->

@@ -73,7 +73,7 @@ Java的同步原语Condition在linux平台上HotSpot中是用pthread实现的, C
 ![](http://ot49rzljt.bkt.clouddn.com/image/tech/pthread_cond_wait.png)
 
 ### glibc/JDK中的实现
-简化了逻辑，暂且只关心最核心的基本逻辑，我加上自己的理解作为注释, 省略部分可以自己去看源码(glibc的代码太难读了...)
+简化了逻辑，暂且只关心最核心的基本逻辑.
 ```c
 // https://github.com/lattera/glibc/blob/master/nptl/pthread_cond_wait.c
 int
@@ -83,13 +83,11 @@ __pthread_cond_wait (pthread_cond_t *cond;
    // 先释放mutex, 为什么?
    // 因为要和他人,合作, 我睡眠了, 别人可以进去拿锁然后改变条件
    err = __pthread_mutex_unlock_usercnt (mutex, 0);
-
    do {
-
      // 我们准备在cond_cont->__data.__futex这个变量上 休眠自己了
 
      // 关键点， 有竞争
-     // futex是目前线程观察到值，
+     // futex_val 是目前线程观察到值，
      unsigned int futex_val = cond->__data.__futex;
 
      // Prepare to wait.  Release the condvar futex.  
