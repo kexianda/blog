@@ -8,7 +8,7 @@ date: 2017-08-17
 ---
 
 [上篇笔记](http://kexianda.info/2017/08/16/%E5%B9%B6%E5%8F%91%E7%B3%BB%E5%88%97-4-%E4%BB%8EAQS%E5%88%B0futex-%E4%BA%8C-JVM%E7%9A%84Thread%E5%92%8CParker/)大致看了Java同步互斥机制在JVM层的实现. HotSpot在Linux平台是用pthread实现. 这篇继续对glibc(NPTL)在Linux平台上如何实现mutex和condition做个笔记.  
-glibc的源码极其难读, 因为要处理平台区别,性能优化,特殊情况处理等等, 源码的可读性不在大神们的考虑之列. 这里不是逐行源码解读, 列出来的代码都不是glibc的原版代码, 改动和简化了, 类伪码了,方便理解, 也把我的理解作为注释放在代码里.  
+glibc的源码极其难读, 因为要处理平台区别,性能优化,特殊情况处理等等, 源码的可读性不在大神们的考虑之列. 这里不是逐行源码解读, 列出来的代码都不是glibc的原版代码, 改动和简化了方便理解.  
 * pthread_mutex_t和lock/unlock操作,
 * low level lock的汇编实现, 最为tricky的地方
 * pthread_cond_t和wait/signal.

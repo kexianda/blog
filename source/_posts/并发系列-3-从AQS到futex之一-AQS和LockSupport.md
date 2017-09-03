@@ -8,7 +8,7 @@ date: 2017-08-13
 
 AQS(AbstractQueuedSynchronizer,同步器)是java.util.concurrenct包一个核心基础类, 来用构建锁或其他同步组件. 网上对这个的分析文章非常多,有源代码解读还有画出图示意线程队列的管理([链接](http://blog.csdn.net/javazejian/article/details/75043422)). 也可以通过Doug Lea的[AQS论文](http://gee.cs.oswego.edu/dl/papers/aqs.pdf)([中文版](http://ifeve.com/aqs-2/))看看AQS的设计思想.
 
-从另外一个角度,继续深入一下:
+从另外一个角度,纵向的深入一下:
 * (JDK) J.U.C (AQS/LockSupport) =>
 * (JVM) HotSpot (Thread/Parker) 线程和block/unblock实现 =>
 * (C runtime) 到glibc中的pthread(NPTL)的实现 =>
@@ -16,7 +16,7 @@ AQS(AbstractQueuedSynchronizer,同步器)是java.util.concurrenct包一个核心
 
 从AQS到HotSpot, 再到glibc, 最后到内核的futex. 纵向一条线深入下来, 粗略地了解下各个层次的实现, 做个笔记.
 问: 整这个有用么?
-答: 没啥用. 还是类似孔乙己写回字.
+答: 可能没啥具体作用. 还是类似孔乙己写回字.
 
 <!--more-->
 ## AQS简述
