@@ -5,13 +5,13 @@ tags:
 - 并发
 - glibc
 - kernel
-date: 2017-08-17
+date: 2017-08-19
 ---
-Futex是Linux提供的最基础的并发原语, C runtime如glibc的mutex，join，condition variable，semphore都是基于futex实现.
+[Futex(Fast Userspace muTexes)](https://www.kernel.org/doc/ols/2002/ols2002-pages-479-495.pdf),是Linux提供的最基础的并发原语, C runtime如glibc的mutex，join，condition variable，semphore都是基于futex实现.
 <!--more-->
 
 ## Overview(what & why)
-[Futex(Fast Userspace muTexes)](https://www.kernel.org/doc/ols/2002/ols2002-pages-479-495.pdf),顾名思义，锁变量是在userspace中. Linux从2.5.7开始支持Futex.
+顾名思义，Futex锁变量是在userspace中. Linux从2.5.7开始支持Futex.
 其设计理由基于两点：
 * 很多同步是无竞争的，一个线程进入临界区然后退出临界区，这个过程往往并没有线程来竞争。Java的synchronized在JVM中的偏向锁轻量级锁的优化也是基于此理由.
 * 陷入内核的成本其实是很高的. 比如Linux系统调用的VSDO优化就是为了避免陷入内核.之前的*nix系统中，进程间同步机制是通过对kernel object的操作来完成，读写锁对象而陷入内核，成本很高。
