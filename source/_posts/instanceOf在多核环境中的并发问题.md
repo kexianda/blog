@@ -6,12 +6,12 @@ tags:
 - 并发
 date: 2017-06-09 22:23:56
 ---
-同事分享了通过profiling发现的高并发性能问题, [一个Spark的性能问题](https://www.slideshare.net/SparkSummit/accelerating-spark-genome-sequencing-in-clouda-data-driven-approach-case-studies-and-beyond-spark-summit-east-talk-by-lucy-lu-and-eric-kaczmarek) 和[一个Cassandra的性能问题](https://issues.apache.org/jira/browse/CASSANDRA-12787), 涉及到:
+开源社区报出来的两个高并发性能问题很有意思, 一个[Spark的性能问题](https://www.slideshare.net/SparkSummit/accelerating-spark-genome-sequencing-in-clouda-data-driven-approach-case-studies-and-beyond-spark-summit-east-talk-by-lucy-lu-and-eric-kaczmarek) 和一个[Cassandra的性能问题](https://issues.apache.org/jira/browse/CASSANDRA-12787), 涉及到:
 - Scala Scalability Issue
 - instanceOf在HotSpot中的实现和优化
 - CPU Cache thrashing / NUMA  
 
-从应用层(大数据)到JVM(HotSpot)instanceOf的实现, 再到CPU的硬件机制, 涉及到知识很有意思, 对写高并发高性能代码有启发, 我把涉及到的知识拓展和小结一下.
+从应用层(大数据)到JVM(HotSpot)instanceOf的实现, 再到CPU的硬件机制, 涉及到知识很有意思, 是一个很典型的问题, 对用Java/C++写多核心的高并发代码有启发, 把涉及到的知识拓展和小结一下.
 <!--more-->
 
 ## 1. CPU Cache & Thrashing & NUMA

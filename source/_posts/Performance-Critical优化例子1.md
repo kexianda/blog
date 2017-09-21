@@ -27,9 +27,11 @@ Xeon Skylake:
 * 分支预测
 * 取码/解码
 * 数据/指令的对齐(alignment)
+* write buffer (Write Combining)
 * SIMD等features: SSE/AVX/AVX2, 以及在牙膏厂最新CPU(Skylake)的AVX512
 
-最近一个项目需要在最新的Xeon Skylake上优化memcpy, 小结下需要那些奇技淫巧:
+最近整最新CPU Xeon Skylake上的memcpy. (注: glibc和ctr已经做的非常好了, 我自己整的版本改善不大)
+小结下需要那些奇技淫巧:
 x86上,不同指令的时钟周期成本可能不同(x86), 甚至同一个指令,在不同mirco-architecture下的成本也可能不一样, 需要查牙膏厂的software developer's manuals. 其实CPU底层的实现非常非常的复杂, 硬件对于码农是一个黑盒, 手册上往往也是寥寥数语, 这种就十分头疼了.
 
 * 跳转表, 对不同长度对于不同代码,直接跳转到特定逻辑, 减少长度判断/跳转(jmp)次数, 减少branch-prediction失败次数. 编译器在优化switch-case时也是这么干的.
