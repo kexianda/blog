@@ -5,11 +5,14 @@ tags:
 - 并发
 date: 2017-11-12
 ---
-多线程的高并发总是个很tricky的事情. 为了避免操作系统的线程context switch成本(以千个ns为单位了), lock-free编程中用各种原子操作(CAS等和内存屏障). 极端的地方, 甚至CAS操作的成本都要考虑. 比如Java中的synchronized的偏向锁/轻量级锁优化就考虑减少CAS操作. 还有JUC包中的一些实现也是尽量减少CAS.
+多线程的高并发总是个很tricky的事情. 为了避免操作系统的线程context switch成本, lock-free编程中用各种原子操作(CAS等和内存屏障). 极端的地方, 甚至CAS操作的成本都要考虑. 比如Java中的synchronized的偏向锁/轻量级锁优化就考虑减少CAS操作. 还有JUC包中的一些实现也是尽量减少CAS.
 那么CAS大致上什么样的一个成本呢?
 <!--more-->
 ## Java ConcurrentLinkedQueue的进队列例子
-先看ConcurrentLinkedQueue(Java 8)的进队列例子,看看Doug Lea大神对CAS怎样考虑tradeoff, 对CAS的成本有个大致印象.
+先看ConcurrentLinkedQueue(Java 8)的进队列例子,看看Doug Lea大神对CAS怎样做tradeoff, 对CAS的成本有个大致印象.
+我们简单地写话, 不用Lock, 而用cmpxchg做比较和替换, 原子操作内来判断tail是否为空并插入新的节点. 但Doug Lea是插入两个节点后才去更新tail变量.
+代码弄的那么晦涩, 付出多跑一次循环的成本, 就是尽量减少一次CAS操作,不是每次进队列都更新tail变量.
+
 ```Java
 /**
      * Inserts the specified element at the tail of this queue.
@@ -48,17 +51,18 @@ date: 2017-11-12
         }
     }
 ```
-代码弄的那么晦涩, 付出多跑一次循环的成本, 就是尽量减少CAS操作,不是每次进队列都更新tail变量.
+
 
 ## 成本分析
-CAS在x86下是lock cmpxchg指令, 成本有:
+CAS在x86下是lock cmpxchg指令, 按我个人的理解, 成本有:
 * CPU cache一致性(MESI)的同步成本.
 * CPU cache miss
-更重的成本在于, cmpxchg一次可能的load cache miss和一次可能的store cache miss, 在多核高并发的环境下, 基础类库的实现中, 竞争激烈, CAS导致的cache miss就高了. 访问memory的话,成本到100+ns级别.
-
+* 除了原子性,lock cmpxchg还有memory barrier的成本(flushes pending read and write operations.)
+cmpxchg一次可能的load cache miss和一次可能的store cache miss, 在多核高并发的环境下, 基础类库的实现中, 竞争激烈, CAS导致的cache miss就高了. 访问memory的话,成本到100+ns级别.
 没有写driver亲自测试, CAS成本粗糙的估计:
-非竞态: 大致十几个ns.
-激烈竞争状态: 1~2百个ns.
+非竞态: 大致十几个ns.    //胡诌的,等测试数据
+激烈竞争状态: 1~2百个ns. //胡诌的,等测试数据
+(等有空用汇编写个driver, 顺便可以测测mfence, lfence, rfence的cost.)
 
 ## 一个玩脱了的例子
 Google的gperftool(TCmalloc)中的SpinLock(Author:大神Sanjay Ghemawat)曾有个[bug](https://github.com/gperftools/gperftools/issues/494), 为了在非竞争情况下省几个纳秒,不用CAS而用NoBarrier_Load,Release_Store, 不小心玩脱了,导致了高并发下的performance的bug.

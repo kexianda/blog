@@ -1,5 +1,5 @@
 ---
-title: '读The Part-Time Parliament笔记(一)'
+title: '[Paxos]读The Part-Time Parliament笔记(一)'
 categories: 技术
 tags:
 - 分布式
