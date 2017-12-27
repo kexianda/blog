@@ -230,6 +230,7 @@ template<typename T> T* Singleton<T>::getInstance () {
 		//atomic_thread_fence (std::memory_order_acquire);
 		if (tmp == nullptr)	{
 			lock_guard<mutex> lock(m_mutex);
+			tmp = m_Instance.load (std::memory_order_relaxed);
 			if (tmp == nullptr) {
 				tmp = new T;
 				//atomic_thread_fence  (std::memory_order_release);
@@ -246,6 +247,16 @@ int main()
 	return 0;
 }
 ```
+
+### static方法
+在C++ 11里, 用static变量只初始化一次的办法也行, C++ 11里也是线程安全的.
+反汇编一下:
+```asm
+call    __cxa_guard_acquire
+# ... static 初始化的汇编代码
+call    __cxa_guard_release
+```
+__cxa_guard_acquire/__cxa_guard_release是gcc的runtime自带的, 保证线程安全.
 
 收工.
 

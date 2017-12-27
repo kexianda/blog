@@ -11,12 +11,21 @@ date: 2017-08-19
 <!--more-->
 
 ## Overview(what & why)
-顾名思义，Futex锁变量是在userspace中. Linux从2.5.7开始支持Futex.
+没有futex前,用内核提供的同步机制, 锁变量也是内核提供, 但是这样成本很高.
+如果用户自己这么实现:
+```
+tryLock(userspaceLockVar) {
+  wait(); // 如果拿不到锁,调用系统调用,休眠本线程
+}
+```
+但这其实有问题的, 在tryLock和wait之间, 如果别的线程释放了userSpaceLockVar, 当前这个线程还继续休眠自己, 可能就醒不过来了.
+
+顾名思义，Fast Userspace muTexes锁变量是在userspace中. Linux从2.5.7开始支持Futex.
 其设计理由基于两点：
 * 很多同步是无竞争的，一个线程进入临界区然后退出临界区，这个过程往往并没有线程来竞争。Java的synchronized在JVM中的偏向锁轻量级锁的优化也是基于此理由.
 * 陷入内核的成本其实是很高的. 比如Linux系统调用的VSDO优化就是为了避免陷入内核.之前的*nix系统中，进程间同步机制是通过对kernel object的操作来完成，读写锁对象而陷入内核，成本很高。
 
-粗略的来讲，从应用程序角度看，一个线程去拿锁，通过原子的test-and-set(cmpxchg())指令去看锁变量，如果没有其他线程持有此锁变量。那么当前线程设置锁变量，因为锁变量在用户空间，不需要陷入内核，此时内核对此一无所知。 如果下一个线程在前一个线程持有锁变量的时候，也来拿锁，发现已经被别人持有，那么，需要调用futex系统调用传FUTEX_WAIT参数，让系统把我这个线程休眠在futex的锁变量上， 内核会线程休眠，同事建立相关的数据结构(futex_q/futex_queues)关联用户空间的锁变量(uaddr)和线程. 如果锁持有者释放锁的时候，把锁变量设置，并调用sys_futex，传FUTEX_WAKE参数。
+粗略的来讲，从应用程序角度看，一个线程去拿锁，通过原子的test-and-set(cmpxchg())指令去看锁变量，如果没有其他线程持有此锁变量。那么当前线程设置锁变量，因为锁变量在用户空间，不需要陷入内核，此时内核对此一无所知。 如果下一个线程在前一个线程持有锁变量的时候，也来拿锁，发现已经被别人持有，那么，需要调用futex系统调用传FUTEX_WAIT参数，让系统把我这个线程休眠在futex的锁变量上.是否真的需要休眠, 内核实现会再检查userspace的锁变量. 内核休眠线程时会建立相关的数据结构(futex_q/futex_queues)关联用户空间的锁变量(uaddr)和线程. 如果锁持有者释放锁的时候，把锁变量设置，并调用sys_futex，传FUTEX_WAKE参数。
 
 释放锁的时候，如果没有其他线程阻塞在锁变量上，其实没有必要调用sys_tutex, 这是个优化，可以看[Futexes Are Tricky](https://cis.temple.edu/~giorgio/cis307/readings/futex.pdf)文中的mutex3实现。在glibc中有个flage FUTEX_WAITERS作用类似。
 

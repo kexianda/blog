@@ -23,8 +23,8 @@ wget http://hg.openjdk.java.net/code-tools/trees/raw-file/tip/trees.py
 ```
 vim ~/.hgrc
 ```
-[extentions]
-Trees= ~/jdk/tools/trees.py
+[extensions]
+trees= ~/jdk/tools/trees.py
 ```
 #### clone repo
 ```
